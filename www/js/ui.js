@@ -235,15 +235,20 @@ function buildUI(filter_function) {
         if (filter_function && !filter_function(s)) continue;
         if (last_cat != s.category) {
             if (last_cat != "") html += `</div>`;
-            html += `<div class="row"><div class="col-sm-12"><h1>${s.category}</h1></div>`
+            html += `<div class="row category" data-category="${s.category}"><div class="col-sm-12"><h1>${s.category}</h1></div>`
             last_cat = s.category;
         }
+        var is_switch = window.LADXR_SWITCHES && typeof(s.default) == 'boolean';
         html += `<div class="col-sm-12 col-md-6 col-lg-4 inputcontainerparent">`;
-        html += `<div class="inputcontainer tooltip bottom" aria-label="${s.description.trim()}">`;
-        html += `<label for='${s.key}'>${s.label}:</label>`;
+        html += `<div class="inputcontainer tooltip bottom${is_switch ? " boolean" : ""}" aria-label="${s.description.trim()}">`;
+        html += `<label for='${is_switch ? s.key + "_switch" : s.key}'>${s.label}:</label>`;
         var opts = s.options
         if (typeof(s.default) == 'boolean') {
             opts = [{key: true, label: "Yes"}, {key: false, label: "No"}]
+        }
+        if (is_switch) {
+            // The select keeps the value the settings string reads; the switch only shows it.
+            html += `<input type="checkbox" class="switch" id='${s.key}_switch' data-for='${s.key}'>`;
         }
         if (opts) {
             if (s.key == 'gfxmod') {
@@ -266,6 +271,13 @@ function buildUI(filter_function) {
     html += `</div>`;
     ID("settings").innerHTML += html;
     loadSettingsString();
+    for(var sw of document.querySelectorAll("input.switch")) {
+        sw.checked = ID(sw.dataset.for).value == "true";
+        sw.onchange = function() {
+            ID(this.dataset.for).value = this.checked ? "true" : "false";
+            ID(this.dataset.for).dispatchEvent(new Event("input"));
+        }
+    }
     for(var s of options) {
         if (ID(s.key)) {
             ID(s.key).oninput = function() { updateSettingsString(); updateSettingsVisibility(); }

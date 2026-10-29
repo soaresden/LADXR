@@ -69,7 +69,10 @@ def generateRom(args, settings, seed, logic, *, rnd=None):
     localization.reset()
     language = None
     if getattr(args, "language_rom", None):
-        language = localization.Localization(open(args.language_rom, 'rb').read())
+        language_rom = open(args.language_rom, 'rb').read()
+        for filename in getattr(args, "extra_patch", None) or []:
+            language_rom = extrapatches.patchLanguageRom(language_rom, open(filename, 'rb').read())
+        language = localization.Localization(language_rom)
         language.prePatch(rom)
 
     pymods = []

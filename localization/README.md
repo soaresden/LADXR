@@ -59,10 +59,10 @@ Python process.
    addresses (probably Japanese).
 6. Add the checksums to `LANGUAGE_ROMS` in `www/js/ui.js`.
 
-## Diacritics (German, Japanese)
+## Diacritics
 
 The English dialog engine still has the code that draws a diacritic tile above
-a letter (umlaut, dakuten), but its table lookup is replaced by `xor a`:
+a letter, but its table lookup is replaced by `xor a`:
 
 ```
 00:263C  3E 1C     ld a, $1C
@@ -76,17 +76,21 @@ a letter (umlaut, dakuten), but its table lookup is replaced by `xor a`:
 00:2649  28 18     jr z, .noDiacritic       ; 1 -> tile $C9, 2 -> tile $C8
 ```
 
-To do, with a German or Japanese ROM to test:
+When the language ROM's own engine reads a diacritic table (found by
+`LanguageRom.diacriticTiles()`), `_enableDiacritics` turns it on in ours:
 
-- Replace the 4 bytes at `$2643` with `call Routine` + `nop`, the routine being
-  in bank $1C (already selected): `ld e,a / ld d,0 / ld hl,Table /
-  add hl,de / ld a,[hl] / ret`.
-- Copy the 256 bytes of `CodepointToDiacritic` of the language ROM to bank $1C,
-  taking the room from the dialog storage of that bank.
-- Tiles $C8/$C9 are in `inventory_overworld_items`, `inventory_indoor_items` and
-  `ending_1`, already copied by `GRAPHICS_WITH_WORDS`.
-- The name entry screen (`file_menus.asm`, `__DIACRITICS_SUPPORT__`) needs
-  another patch to show umlauts.
+- the 4 bytes at `$2643` become `call Routine` + `nop`, the routine and the
+  table (tiles, not diacritic numbers) going in bank $1C, taken from the
+  dialog storage with `PointerTable.takeStorage()`;
+- `ld a,$C9 / rr e / jr c / dec a` at `$2659` becomes `ld a,e`.
 
-The French ROM also has a (disabled) table, with an acute accent on "É" at `$CE`:
-it can be used to test the patch, dialog $5E "OEUF SACRÉ" would show its accent.
+Only tiles $C8/$C9 are in VRAM during dialogs (from `inventory_overworld_items`
+and `inventory_indoor_items`, copied by `GRAPHICS_WITH_WORDS`). Turbo-Français
+(kemenaran, French Rev A, given with `--extra-patch`) adds a circumflex in tile
+$CC that it swaps with the inventory bar; that swap isn't ported, so its
+capitals with a circumflex (Î, Ê) show without it. Its acute and grave capitals
+(É, È, À) and the œ/Œ ligatures work.
+
+German and Japanese would go through the same path, but they still need their
+translations of LADXR's texts, and the name entry screen (`file_menus.asm`,
+`__DIACRITICS_SUPPORT__`) would need another patch to show umlauts.

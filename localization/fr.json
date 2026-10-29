@@ -2,7 +2,8 @@
   "name": "Français",
   "checksums": {
     "89199617": "France v1.0",
-    "89757956": "France v1.1 (Rev A)"
+    "89757956": "France v1.1 (Rev A)",
+    "89801103": "France v1.1 (Rev A) + Turbo-Français v1.4"
   },
   "diacritics": false,
   "charmap": {

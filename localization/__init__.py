@@ -42,6 +42,8 @@ GRAPHICS_WITH_WORDS = [
     (0x3A, 0x0000, 0x4000),  # photo_elements_2
 ]
 
+DIACRITIC_TILES = (0xC8, 0xC9)  # the diacritic tiles in VRAM during dialogs
+
 SAVE_MENU_BG = 0x0D
 SAVE_MENU_TILES_ADDR = 0x0400  # save_menu graphics in banks $0F/$2F, tile $80 first
 SAVE_MENU_HOME_ROW = 0x9960
@@ -78,6 +80,7 @@ class Localization:
         print("Language: %s (%s)" % (self.lang["name"], self.rom.version))
         self._copyTexts(rom)
         self._copyFont(rom)
+        self._enableDiacritics(rom)
         if self.lang.get("graphics", True):
             self._copyGraphics(rom)
             self._copyBackgrounds(rom)
@@ -110,6 +113,30 @@ class Localization:
         for n, tile in enumerate(self.rom.codepointTable()):
             if tile:
                 table[table_addr + n] = tile
+
+    def _enableDiacritics(self, rom):
+        """The English dialog engine still draws a diacritic tile above a letter,
+        but its table lookup is replaced by `xor a`. When the language ROM's
+        engine uses one (Turbo-Français), call a lookup of its table instead.
+        Only tiles $C8/$C9 are in VRAM during dialogs: other diacritics (the
+        circumflex of Turbo-Français, which swaps tiles with the inventory)
+        are left out and those capitals show without their accent."""
+        tiles = self.rom.diacriticTiles()
+        if tiles is None:
+            return
+        tiles = bytes(tile if tile in DIACRITIC_TILES else 0 for tile in tiles)
+        if not any(tiles):
+            return
+        addr = rom.texts.takeStorage(TEXT_BANK, len(tiles) + 9)
+        table = addr | 0x4000
+        routine = table + len(tiles)
+        # ld e,a; ld d,0; ld hl,table; add hl,de; ld a,[hl]; ret
+        code = bytes([0x5F, 0x16, 0x00, 0x21, table & 0xFF, table >> 8, 0x19, 0x7E, 0xC9])
+        rom.banks[TEXT_BANK][addr:addr + len(tiles) + len(code)] = tiles + code
+        # Bank $1C is selected here: ld e,a; ld d,0; xor a -> call routine; nop
+        rom.patch(0x00, 0x2643, "5F1600AF", "CD%02X%02X00" % (routine & 0xFF, routine >> 8))
+        # The table holds tiles, not diacritic numbers: ld a,$C9; rr e; jr c,+1; dec a -> ld a,e
+        rom.patch(0x00, 0x2659, "3EC9CB1B38013D", "7B000000000000")
 
     def _copyGraphics(self, rom):
         for bank, addr, size in GRAPHICS_WITH_WORDS:

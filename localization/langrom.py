@@ -29,7 +29,15 @@ PATTERNS = {
     "codepoint_table": rb"\xEA\x00\x21\x21(..)\x19\x5E\x16\x00",
     # call ReloadSavedBank; ld hl,FontTiles; add hl,de; ld c,l; ld b,h; pop hl; ld e,$10
     "font": rb"\xCD..\x21(..)\x19\x4D\x44\xE1\x1E\x10",
+    # ldh a,[hMultiPurpose1]; ld e,a; ld d,0; ld hl,CodepointToDiacritic; add hl,de; ld a,[hl]
+    # Only in engines that draw diacritics (German, Japanese, French Turbo-Français).
+    "diacritic_table": rb"\xF0\xD8\x5F\x16\x00\x21(..)\x19\x7E",
+    # push hl; ld hl,DiacriticToTileMap; add hl,de; ld a,[hl]; pop hl (Turbo-Français)
+    "diacritic_tiles": rb"\xE5\x21(..)\x19\x7E\xE1",
 }
+
+# The original engines draw diacritic 1 with tile $C9 and diacritic 2 with $C8.
+DEFAULT_DIACRITIC_TILES = (0, 0xC9, 0xC8)
 
 # The font is in bank $0F in every version.
 FONT_BANK = 0x0F
@@ -98,6 +106,21 @@ class LanguageRom:
     def font(self):
         b = self.bank(FONT_BANK)
         return b[self.font_addr:self.font_addr + FONT_TILE_COUNT * 16]
+
+    def diacriticTiles(self):
+        """The tile drawn above each codepoint, or None when this ROM's dialog
+        engine doesn't draw diacritics."""
+        m = re.search(PATTERNS["diacritic_table"], self.data[:0x4000], re.S)
+        if m is None:
+            return None
+        addr = struct.unpack("<H", m.group(1))[0] & 0x3FFF
+        table = self.bank(TEXT_BANK)[addr:addr + CODEPOINT_TABLE_SIZE]
+        m = re.search(PATTERNS["diacritic_tiles"], self.data[:0x4000], re.S)
+        tiles = DEFAULT_DIACRITIC_TILES
+        if m is not None:
+            addr = struct.unpack("<H", m.group(1))[0]
+            tiles = tuple(self.data[addr:addr + 4])
+        return bytes(tiles[n] if n < len(tiles) else 0 for n in table)
 
     def decode(self, text):
         """Readable version of a dialog, for dumps and debugging."""

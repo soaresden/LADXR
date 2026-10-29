@@ -16,14 +16,40 @@ PALETTES_BANK = 0x21
 KNOWN = {
     "c05274fcda0772adbf5ad48f6345467c919f473aa67db3048029fb78bd0eb56c": ("Font Improvement v1.2 by Tzepish", "font"),
     "bd9be04a7be4a5f5b52e88c54abb5f7834893bd724f3f2b62f84534b36062963": ("GBA Enhanced by Jayro", "palettes"),
+    "765b6978ae824db687cacd30b42e20296a9d1e9855010fe484314173455ce499": ("Turbo-Français v1.4 by kemenaran", "language"),
 }
+# Turbo-Français is made for the French v1.1 (Rev A) ROM.
+FRENCH_REV_A_CHECKSUM = 89757956
 
 
-def apply(rom, patch, english, language=None):
+def _identify(patch):
     digest = hashlib.sha256(patch).hexdigest()
     if digest not in KNOWN:
         raise ValueError("Unknown extra patch (sha256 %s), supported: %s" % (digest, ", ".join(name for name, _ in KNOWN.values())))
-    name, kind = KNOWN[digest]
+    return KNOWN[digest]
+
+
+def patchLanguageRom(language_rom, patch):
+    """Apply a patch made for the language ROM (Turbo-Français) before it is
+    used as language ROM. Other patches leave it as it is."""
+    name, kind = _identify(patch)
+    if kind != "language":
+        return language_rom
+    if sum(language_rom) != FRENCH_REV_A_CHECKSUM:
+        raise ValueError("%s needs the French v1.1 (Rev A) ROM as language ROM" % (name))
+    print("Extra patch: %s" % (name))
+    data = bytearray(language_rom)
+    for offset, record in readIps(patch):
+        data[offset:offset + len(record)] = record
+    return bytes(data)
+
+
+def apply(rom, patch, english, language=None):
+    name, kind = _identify(patch)
+    if kind == "language":
+        if language is None:
+            raise ValueError("%s needs a French language ROM (--language-rom)" % (name))
+        return
     print("Extra patch: %s" % (name))
     if kind == "font":
         _applyFont(rom, readIps(patch), english, language)

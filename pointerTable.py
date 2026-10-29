@@ -227,3 +227,11 @@ class PointerTable:
 
     def adjustDataStart(self, new_start):
         self.__info["data_addr"] = new_start
+
+    def takeStorage(self, bank, size):
+        # Reserve room in the storage of a bank for other data, before store().
+        for st in sorted(self.__storage, key=lambda st: st["end"] - st["start"], reverse=True):
+            if st["bank"] == bank and st["end"] - st["start"] >= size:
+                st["end"] -= size
+                return st["end"]
+        raise RuntimeError("No room for %d bytes in bank %02X" % (size, bank))

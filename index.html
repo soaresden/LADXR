@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LADXR · Link's Awakening DX Randomizer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme-dx.css">
+</head>
+<body class="dx">
+
+<input type="checkbox" id="generatingdialog" class="modal">
+<div>
+    <div class="card">
+        <h3 class="section"><span class="spinner" style="margin: 0 10 0 0"></span>Randomizing...</h3>
+        <p class="section" id="generatingtext">Working magic...</p>
+    </div>
+</div>
+
+<input type="checkbox" id="seeddonedialog" class="modal">
+<div>
+    <div class="card large">
+        <label for="seeddonedialog" class="modal-close" ></label>
+        <h3 class="section">Seed generation complete!</h3>
+        <p class="section">Seed: <span id="seedSpan">...</span></p>
+        <p class="section">
+            <button id="spoilerButton" class="primary large" onclick="downloadSpoilers()">Download Spoiler Log</button>
+            <a class="button large primary" style="" id="magpieLink">Open in Magpie</a>
+        </p>
+        <p class="section" style="display: flex; align-items: center;">
+            Share:
+            <input id="shareseed" style="flex-grow: 1; margin-right: 0px" readonly/>
+            <button id="shareseedbutton" style="margin-left: 0px" onclick="ID('shareseed').select(); navigator.clipboard.writeText(ID('shareseed').value); alert('Link copied to clipboard', 'LADXR')"><span class="icon-link"></span></button>
+        </p>
+    </div>
+</div>
+<input type="checkbox" id="errordialog" class="modal">
+<div>
+    <div class="card large">
+        <label for="errordialog" class="modal-close" ></label>
+        <h3 class="section">Error:</h3>
+        <p class="section"><pre id="failureMessage"></pre></p>
+    </div>
+</div>
+
+<input type="checkbox" id="emulatordialog" class="modal">
+<div>
+    <div class="card fluid" style="max-height: none">
+        <div class="row" id="emulatorcontainer">
+            <span class="icon-settings" id="emulatorsettingsbutton"></span>
+        </div>
+    </div>
+</div>
+<input type="checkbox" id="emulatorsettingsdialog" class="modal">
+<div>
+    <div class="card" style="max-width: 800px; max-height: none"><div class="row">
+        <label for="emulatorsettingsdialog" class="modal-close" ></label>
+        <div class="col-sm-4">
+            <div class="row"><h4>Volume</h4></div>
+            <div class="row"><input type="range" min="0" max="100" value="50" id="volume0" style="width: 100%"></div>
+            <div class="row"><input type="range" min="0" max="100" value="50" id="volume1" style="width: 100%"></div>
+        </div>
+        <div class="col-sm-4">
+            <div class="row"><h4>Keys</h4></div>
+            <div class="row"><button id="keyUP">Up: ...</button></div>
+            <div class="row"><button id="keyDOWN">Down: ...</button></div>
+            <div class="row"><button id="keyLEFT">Left: ...</button></div>
+            <div class="row"><button id="keyRIGHT">Right: ...</button></div>
+        </div>
+        <div class="col-sm-4">
+            <div class="row"><h4>&nbsp;</h4></div>
+            <div class="row"><button id="keyB">B: ...</button></div>
+            <div class="row"><button id="keyA">A: ...</button></div>
+            <div class="row"><button id="keySTART">Start: ...</button></div>
+            <div class="row"><button id="keySELECT">Select: ...</button></div>
+        </div>
+    </div></div>
+</div>
+
+<div class="dx-header">
+    <div class="dx-wrap dx-nav">
+        <span class="dx-brand">LADXR &middot; FR</span>
+        <span class="dx-links">
+            <a href="https://github.com/soaresden/LADXR">This fork</a>
+            <a href="https://daid.github.io/LADXR/">Original LADXR</a>
+        </span>
+    </div>
+    <div class="dx-wrap dx-title">
+        <div class="dx-kicker">The Legend of Zelda</div>
+        <h1 class="dx-logo">Link's Awakening <span class="dx-badge">DX</span></h1>
+        <div class="dx-sub">Randomizer</div>
+        <div class="dx-hearts"><span>&#9829;</span><span>&#9829;</span><span>&#9829;</span></div>
+    </div>
+</div>
+
+<main class="dx-wrap">
+    <section class="dx-slots">
+        <div class="dx-slot">
+            <div class="dx-slot-tag">1 &middot; English ROM</div>
+            <input type="file" id="rom" name="rom" style="display:none" accept=".gbc"/>
+            <label for="rom" class="dx-cart" id="romlabel">Select input ROM</label>
+            <p class="dx-slot-help">Link's Awakening DX v1.0, English (USA, Europe). Required.</p>
+        </div>
+        <div class="dx-slot">
+            <div class="dx-slot-tag">2 &middot; Language ROM</div>
+            <input type="file" id="languagerom" name="languagerom" style="display:none" accept=".gbc"/>
+            <label for="languagerom" class="dx-cart dx-cart-alt" id="languageromlabel">Select language ROM (optional)</label>
+            <p class="dx-slot-help">Your ROM in another language (French) to play the seed in it. <button id="languageromclear" class="dx-link-button" disabled>Play in English</button></p>
+        </div>
+        <div class="dx-go">
+            <input id="submitbutton" class="dx-a-button" type="submit" value="A" title="Randomize!" disabled/>
+            <label for="submitbutton" class="dx-go-label">Randomize!</label>
+        </div>
+    </section>
+
+    <div class="dx-tabs" id="tabs"></div>
+
+    <div id="settings"></div>
+
+    <div class="dx-dialog" id="helpbox">Point at an option to read what it does.</div>
+</main>
+
+<div class="dx-wrap dx-footer">
+    Unofficial fork of <a href="https://github.com/daid/LADXR">LADXR by Daid</a>, adding a language ROM to play seeds in French. Report problems to <a href="https://github.com/soaresden/LADXR">this fork</a>, not to the LADXR team.<br>
+    LADXR is a fan project, not affiliated with Nintendo. You need your own copy of the game.
+</div>
+
+<script src="js/options.js"></script>
+<script src="js/ui.js"></script>
+<script>"use strict";
+var roms = [];
+
+function ID(s) { return document.getElementById(s); }
+
+var idx = options.findIndex((e) => e.category != "Main");
+options.splice(idx, 0, {
+    key: 'spoilerformat', category: "Main", label: "Spoiler Format",
+    options: [{key: 'none', label: 'None'}, {key: "text", label: 'Text'}, {key: 'json', label: 'JSON'}], default: 'none',
+    description: "Affects how the spoiler log is generated.\n[None] No spoiler log is generated. One can still be manually dumped later.\n[Text] Creates a .txt file meant for a human to read.\n[JSON] Creates a .json file with a little more information and meant for a computer to read."});
+window.LADXR_SWITCHES = true;
+buildUI(function(s) { return s.key != 'forwardfactor'; });
+
+// Categories as tabs, the last one opened is remembered.
+(function() {
+    var categories = document.querySelectorAll("#settings .category");
+    var stored = null;
+    try { stored = localStorage.getItem("ladxr_tab"); } catch(e) {}
+    function show(name) {
+        for (var c of categories) c.classList.toggle("active", c.dataset.category == name);
+        for (var b of ID("tabs").children) b.classList.toggle("active", b.dataset.category == name);
+        try { localStorage.setItem("ladxr_tab", name); } catch(e) {}
+    }
+    for (var c of categories) {
+        var b = document.createElement("button");
+        b.textContent = c.dataset.category;
+        b.dataset.category = c.dataset.category;
+        b.onclick = function() { show(this.dataset.category); };
+        ID("tabs").appendChild(b);
+    }
+    var names = Array.from(categories).map((c) => c.dataset.category);
+    show(names.includes(stored) ? stored : names[0]);
+})();
+
+// Option descriptions go in the dialog box, like the game's text box.
+(function() {
+    function describe(e) {
+        var box = e.target.closest && e.target.closest(".inputcontainer");
+        if (!box) return;
+        var title = box.querySelector("label").textContent.replace(/:$/, "");
+        ID("helpbox").innerHTML = "";
+        var who = document.createElement("span");
+        who.className = "dx-who";
+        who.textContent = title;
+        ID("helpbox").appendChild(who);
+        ID("helpbox").appendChild(document.createTextNode(box.getAttribute("aria-label")));
+    }
+    ID("settings").addEventListener("mouseover", describe);
+    ID("settings").addEventListener("focusin", describe);
+})();
+</script>
+</body>
+</html>

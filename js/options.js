@@ -999,6 +999,15 @@ var options =
   ]
  },
  {
+  "key": "skiptext",
+  "category": "User options",
+  "short_key": "y",
+  "label": "Skip text with B",
+  "description": "B skips the rest of a dialog, A still advances it page by page. Dialogs with a choice are never skipped. From the \"Skip Dialog\" patch by Tobias V. Langhoff.",
+  "aesthetic": true,
+  "default": false
+ },
+ {
   "key": "lowhpbeep",
   "category": "User options",
   "short_key": "p",

@@ -30,6 +30,10 @@ self.onmessage = async (event) => {
         if ("language.gbc" in event.data) {
             self.pyodide.FS.writeFile("/language.gbc", event.data["language.gbc"]);
         }
+        for (var name in event.data) {
+            if (name.startsWith("extra_"))
+                self.pyodide.FS.writeFile("/" + name, event.data[name]);
+        }
         if ("gfx.png" in event.data) {
             await pyodide.loadPackage("pillow");
             self.pyodide.FS.writeFile("gfx/custom.png", event.data["gfx.png"]);

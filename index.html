@@ -141,8 +141,76 @@ options.splice(idx, 0, {
     key: 'spoilerformat', category: "Main", label: "Spoiler Format",
     options: [{key: 'none', label: 'None'}, {key: "text", label: 'Text'}, {key: 'json', label: 'JSON'}], default: 'none',
     description: "Affects how the spoiler log is generated.\n[None] No spoiler log is generated. One can still be manually dumped later.\n[Text] Creates a .txt file meant for a human to read.\n[JSON] Creates a .json file with a little more information and meant for a computer to read."});
+// Patches by other authors, see extrapatches.py. Their authors don't allow
+// sharing them, so the player gives the file once and it stays in the browser.
+var EXTRA_PATCHES = [
+    {key: "fontpatch", label: "Font", name: "Font Improvement (Tzepish)",
+     url: "https://www.romhacking.net/hacks/927/", file: "zelda_ladx_fontimprovement_v1.2.ips",
+     sha256: "c05274fcda0772adbf5ad48f6345467c919f473aa67db3048029fb78bd0eb56c",
+     description: "Replaces the italic font with a more readable one, like the Oracles games.\nNeeds the patch file from romhacking.net (Font Improvement v1.2 by Tzepish): you are asked for it once."},
+    {key: "colorpatch", label: "Colors", name: "GBA Enhanced (Jayro)",
+     url: "https://www.romhacking.net/hacks/7202/", file: "... [GBA Enhanced].bps",
+     sha256: "bd9be04a7be4a5f5b52e88c54abb5f7834893bd724f3f2b62f84534b36062963",
+     description: "Softer colors, made for Game Boys with a backlit or IPS screen.\nNeeds the patch file from romhacking.net (GBA Enhanced by Jayro, the .bps file): you are asked for it once."},
+];
+for (var p of EXTRA_PATCHES) {
+    options.push({key: p.key, category: "User options", label: p.label, default: "",
+        options: [{key: "", label: "Normal"}, {key: "on", label: p.name}], description: p.description});
+}
 window.LADXR_SWITCHES = true;
 buildUI(function(s) { return s.key != 'forwardfactor'; });
+
+(function() {
+    function load(key) {
+        try {
+            var stored = localStorage.getItem("ladx_patch_" + key);
+            if (!stored) return null;
+            var bin = atob(stored), array = new Uint8Array(bin.length);
+            for (var k = 0; k < bin.length; k++) array[k] = bin.charCodeAt(k);
+            return array;
+        } catch(e) { return null; }
+    }
+    async function sha256(array) {
+        var hash = new Uint8Array(await crypto.subtle.digest("SHA-256", array));
+        return Array.from(hash).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    for (let p of EXTRA_PATCHES) {
+        var input = document.createElement("input");
+        input.type = "file";
+        input.style.display = "none";
+        document.body.appendChild(input);
+        p.input = input;
+        p.data = load(p.key);
+        try { if (p.data && localStorage.getItem("ladx_patch_" + p.key + "_on") == "1") ID(p.key).value = "on"; } catch(e) {}
+        ID(p.key).addEventListener("input", function() {
+            var on = this.value == "on";
+            try { localStorage.setItem("ladx_patch_" + p.key + "_on", on ? "1" : "0"); } catch(e) {}
+            if (on && !p.data) p.input.click();
+        });
+        input.onchange = async function() {
+            if (!this.files.length) return;
+            var array = new Uint8Array(await this.files[0].arrayBuffer());
+            this.value = "";
+            if (await sha256(array) != p.sha256) {
+                ID(p.key).value = "";
+                alert("This is not the " + p.name + " patch. Download it from " + p.url + " and give the " + p.file + " file.");
+                return;
+            }
+            p.data = array;
+            try {
+                var s = "";
+                for (var b of array) s += String.fromCharCode(b);
+                localStorage.setItem("ladx_patch_" + p.key, btoa(s));
+            } catch(e) {}
+        };
+    }
+})();
+
+// Read by startRomGeneration in ui.js.
+function getExtraPatches() {
+    return EXTRA_PATCHES.filter((p) => p.data && ID(p.key).value == "on")
+        .map((p) => ({name: "extra_" + p.key, data: p.data}));
+}
 
 // Categories as tabs, the last one opened is remembered.
 (function() {

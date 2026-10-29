@@ -284,6 +284,9 @@ Turns all the phone booths into extra shops, and lowers the prices, and allows b
             Setting('textmode', 'User options', 'f', 'Text mode', options=[('fast', '', 'Fast'), ('default', 'd', 'Normal'), ('none', 'n', 'No-text')], default='fast',
                 description="""[Fast] Makes text appear twice as fast.
 [No-Text] Removes all text from the game""", aesthetic=True),
+            Setting('skiptext', 'User options', 'y', 'Skip text with B', default=False,
+                description='B skips the rest of a dialog, A still advances it page by page. Dialogs with a choice are never skipped. From the "Skip Dialog" patch by Tobias V. Langhoff.',
+                aesthetic=True),
             Setting('lowhpbeep', 'User options', 'p', 'Low HP beeps', options=[('none', 'D', 'Disabled'), ('slow', 'S', 'Slow'), ('default', 'N', 'Normal')], default='slow',
                 description='Slows or disables the low health beeping sound', aesthetic=True),
             Setting('noflash', 'User options', 'l', 'Remove flashing lights', default=True,

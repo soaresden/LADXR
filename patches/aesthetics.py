@@ -500,6 +500,21 @@ def fastText(rom):
     rom.patch(0x00, 0x24CA, ASM("jp $2485"), ASM("call $2485"))
 
 
+def skipTextWithB(rom):
+    # DX no longer checks the "unskippable" flag (bit 7 of DialogBankTable), so
+    # B advances text like A. Read the flag again, like Tobias V. Langhoff's
+    # "Skip Dialog" patch: B skips the rest of a skippable dialog.
+    rom.patch(0x00, 0x26DC, ASM("ld a, [hl]\nand a"), ASM("bit 7, [hl]"))
+
+
+def protectChoicesFromSkip(rom):
+    # Dialogs ending with a choice can't be skipped with B, whatever text
+    # LADXR put in their slot. Run after all texts are final.
+    for idx in range(len(rom.texts)):
+        if not isinstance(rom.texts[idx], int) and rom.texts[idx][-1:] == b'\xfe':
+            rom.banks[0x1C][0x741 + idx] |= 0x80
+
+
 def noText(rom):
     for idx in range(len(rom.texts)):
         if not isinstance(rom.texts[idx], int) and (idx < 0x217 or idx > 0x21A):

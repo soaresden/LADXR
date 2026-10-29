@@ -526,6 +526,13 @@ async function startRomGeneration()
         args.push("/language.gbc");
         data['language.gbc'] = languageRomArray;
     }
+    if (typeof getExtraPatches == "function") {
+        for (var p of getExtraPatches()) {
+            args.push("--extra-patch");
+            args.push("/" + p.name);
+            data[p.name] = p.data;
+        }
+    }
     e = ID("gfxmod")
     if (e.value == "custom" && ID('customgfxfile').value) {
         args.push("-s");

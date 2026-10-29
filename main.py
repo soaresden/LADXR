@@ -55,6 +55,8 @@ def main(mainargs: Optional[List[str]] = None) -> None:
         help="Load python code mods.")
     parser.add_argument('--language-rom', dest="language_rom", type=str, required=False,
         help="Your Link's Awakening DX ROM in another language (French...): its texts, font and menus are used in the generated rom. See localization/README.md")
+    parser.add_argument('--extra-patch', dest="extra_patch", action='append',
+        help="A patch by another author that you supply, applied on top of the generated rom: Font Improvement v1.2 (Tzepish) or GBA Enhanced (Jayro). See extrapatches.py")
 
     settings = Settings()
     args = parser.parse_args(mainargs)

@@ -58,6 +58,7 @@ import patches.colorBook
 import hints
 import locations.keyLocation
 import localization
+import extrapatches
 
 
 # Function to generate a final rom, this patches the rom with all required patches
@@ -207,6 +208,8 @@ def generateRom(args, settings, seed, logic, *, rnd=None):
     if settings.textmode == 'none':
         patches.aesthetics.fastText(rom)
         patches.aesthetics.noText(rom)
+    if settings.skiptext:
+        patches.aesthetics.skipTextWithB(rom)
     if not settings.nagmessages:
         patches.aesthetics.removeNagMessages(rom)
     if settings.lowhpbeep == 'slow':
@@ -310,4 +313,10 @@ def generateRom(args, settings, seed, logic, *, rnd=None):
         pymod.postPatch(rom)
     if language:
         language.postPatch(rom)
+    if settings.skiptext:
+        patches.aesthetics.protectChoicesFromSkip(rom)
+    if getattr(args, "extra_patch", None):
+        english = open(args.input_filename, 'rb').read()
+        for filename in args.extra_patch:
+            extrapatches.apply(rom, open(filename, 'rb').read(), english, language)
     return rom

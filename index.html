@@ -152,6 +152,10 @@ var EXTRA_PATCHES = [
      url: "https://www.romhacking.net/hacks/7202/", file: "... [GBA Enhanced].bps",
      sha256: "bd9be04a7be4a5f5b52e88c54abb5f7834893bd724f3f2b62f84534b36062963",
      description: "Softer colors, made for Game Boys with a backlit or IPS screen.\nNeeds the patch file from romhacking.net (GBA Enhanced by Jayro, the .bps file): you are asked for it once."},
+    {key: "tfpatch", label: "French text", name: "Turbo-Français (kemenaran)",
+     url: "https://www.romhacking.net/hacks/7281/", file: "azlf-r1-turbo-francais-v1.4.ips",
+     sha256: "765b6978ae824db687cacd30b42e20296a9d1e9855010fe484314173455ce499",
+     description: "Improved French script: accents on capitals (ÉPÉE, À), the œ ligature, typo fixes. Capitals with a circumflex (Î, Ê) show without it.\nNeeds the French v1.1 (Rev A) ROM as language ROM, and the patch file from romhacking.net (Turbo-Français v1.4 by kemenaran): you are asked for it once."},
 ];
 for (var p of EXTRA_PATCHES) {
     options.push({key: p.key, category: "User options", label: p.label, default: "",

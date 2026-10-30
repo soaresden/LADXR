@@ -156,6 +156,10 @@ var EXTRA_PATCHES = [
      url: "https://www.romhacking.net/hacks/7281/", file: "azlf-r1-turbo-francais-v1.4.ips",
      sha256: "765b6978ae824db687cacd30b42e20296a9d1e9855010fe484314173455ce499",
      description: "Improved French script: accents on capitals (ÉPÉE, À), the œ ligature, typo fixes. Capitals with a circumflex (Î, Ê) show without it.\nNeeds the French v1.1 (Rev A) ROM as language ROM, and the patch file from romhacking.net (Turbo-Français v1.4 by kemenaran): you are asked for it once."},
+    {key: "restorationpatch", label: "Uncensored", name: "Restoration French (Artemis251)",
+     url: "https://www.romhacking.net/", file: "Link's Awakening Restoration French.gbc",
+     sha256: "4cc01351bd81d21b4683699c7ead10a02017ce19f4595b3a8039e4bb846f4936",
+     description: "Undoes the censorship of the international version: the mermaid lost her bikini, not a necklace (sprites, icon and her dialogs, like the Japanese version).\nNeeds a French language ROM, and your own \"Restoration French\" ROM (Artemis251's hack applied to the French Rev A ROM): you are asked for it once."},
 ];
 for (var p of EXTRA_PATCHES) {
     options.push({key: p.key, category: "User options", label: p.label, default: "",

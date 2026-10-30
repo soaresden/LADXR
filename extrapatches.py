@@ -1,11 +1,19 @@
 """Patches by other authors, applied on top of a generated rom.
 
 Their authors don't allow shipping them with other files, so the player
-supplies the patch file (--extra-patch, or the page's options). A patch is
+supplies the file (--extra-patch, or the page's options). A file is
 recognized by its SHA-256, and only the part known to be safe on a randomized
-rom is applied: the font tiles, or the palettes.
+rom is applied:
+- Font Improvement v1.2 (Tzepish): the font tiles;
+- GBA Enhanced (Jayro): the palettes bank;
+- Turbo-Français v1.4 (kemenaran): applied to the French language ROM;
+- Restoration French (Artemis251), the player's patched ROM: the uncensored
+  mermaid (sprites, icon, her dialogs).
 """
 import hashlib
+
+import utils
+from locations.items import TRADING_ITEM_NECKLACE
 
 FONT_BANKS = (0x0F, 0x2F)  # the font and its copy read by the Game Boy Color
 FONT_START, FONT_END = 0x1000, 0x1A00  # tiles $00-$9F
@@ -17,9 +25,25 @@ KNOWN = {
     "c05274fcda0772adbf5ad48f6345467c919f473aa67db3048029fb78bd0eb56c": ("Font Improvement v1.2 by Tzepish", "font"),
     "bd9be04a7be4a5f5b52e88c54abb5f7834893bd724f3f2b62f84534b36062963": ("GBA Enhanced by Jayro", "palettes"),
     "765b6978ae824db687cacd30b42e20296a9d1e9855010fe484314173455ce499": ("Turbo-Français v1.4 by kemenaran", "language"),
+    # A ROM, not a patch: the player's own "Restoration French" ROM.
+    "4cc01351bd81d21b4683699c7ead10a02017ce19f4595b3a8039e4bb846f4936": ("Restoration French by Artemis251", "restoration"),
 }
 # Turbo-Français is made for the French v1.1 (Rev A) ROM.
 FRENCH_REV_A_CHECKSUM = 89757956
+
+# What Restoration changes to undo the censorship of the mermaid's item (a
+# necklace instead of her bikini), as (bank, first offset, last offset): the
+# item's sprite, its icon in the font, the mermaid's sprites. The same bytes
+# in the English ROM, so they apply on top of it.
+RESTORATION_RANGES = [
+    (0x0C, 0x0680, 0x06BB), (0x2C, 0x0680, 0x06BB),
+    (0x0F, 0x1980, 0x198F), (0x2F, 0x1980, 0x198F),
+    (0x12, 0x0D42, 0x0DBE), (0x12, 0x0DD0, 0x0DDF), (0x12, 0x0DF0, 0x0E5E), (0x12, 0x0EA2, 0x0EDD),
+    (0x32, 0x0D42, 0x0DBE), (0x32, 0x0DD0, 0x0DDF), (0x32, 0x0DF0, 0x0E5E), (0x32, 0x0EA2, 0x0EDD),
+    (0x26, 0x118F, 0x119D),
+]
+# The mermaid's dialogs and the trade that give the item.
+RESTORATION_DIALOGS = (0x1EC, 0x1F0, 0x1F1, 0x1F2, 0x1F5, 0x1F7)
 
 
 def _identify(patch):
@@ -44,17 +68,36 @@ def patchLanguageRom(language_rom, patch):
     return bytes(data)
 
 
+def prePatch(patch):
+    """Before LADXR writes its texts: the names those texts use."""
+    name, kind = _identify(patch)
+    if kind == "restoration":
+        utils._NAMES[TRADING_ITEM_NECKLACE] = "Bikini"
+
+
 def apply(rom, patch, english, language=None):
     name, kind = _identify(patch)
+    if kind in ("language", "restoration") and language is None:
+        raise ValueError("%s needs a French language ROM (--language-rom)" % (name))
     if kind == "language":
-        if language is None:
-            raise ValueError("%s needs a French language ROM (--language-rom)" % (name))
         return
     print("Extra patch: %s" % (name))
     if kind == "font":
         _applyFont(rom, readIps(patch), english, language)
     elif kind == "palettes":
         _applyPalettes(rom, applyBps(patch, english), english)
+    elif kind == "restoration":
+        _applyRestoration(rom, patch)
+
+
+def _applyRestoration(rom, restoration):
+    from localization.langrom import LanguageRom
+
+    for bank, start, end in RESTORATION_RANGES:
+        rom.banks[bank][start:end + 1] = restoration[bank * 0x4000 + start:bank * 0x4000 + end + 1]
+    texts = LanguageRom(restoration).texts
+    for n in RESTORATION_DIALOGS:
+        rom.texts[n] = bytearray(texts[n])
 
 
 def _applyFont(rom, records, english, language):
